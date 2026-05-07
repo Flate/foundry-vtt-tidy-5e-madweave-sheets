@@ -6,6 +6,7 @@
   import { getCharacterSheetQuadroneContext } from 'src/sheets/sheet-context.svelte';
   import CharacterSubtitle from './character-parts/CharacterSubtitle.svelte';
   import ActorExhaustionBar from './parts/ActorExhaustionBar.svelte';
+  import Pips from 'src/components/pips/Pips.svelte';
   import ActorPortrait from './parts/ActorPortrait.svelte';
   import AbilityScore from './character-parts/AbilityScore.svelte';
   import InspirationBadge from './character-parts/InspirationBadge.svelte';
@@ -77,6 +78,8 @@
   let hdPct = $derived(context.system.attributes?.hd?.pct ?? 0);
 
   let exhaustionLevel = $derived(context.system.attributes.exhaustion);
+  let eldritchMadnessLevel = $derived((context.system.attributes as any)?.eldritchMadness ?? 0);
+  let cmeLevel = $derived((context.system.attributes as any)?.criticalMadnessEvents ?? 0);
 
   let ini = $derived(getModifierData(context.system.attributes.init.total));
 
@@ -603,6 +606,20 @@
                   <i class="fas fa-heart-pulse"></i>
                   <span class="value">{exhaustionLevel}</span>
                 </button>
+              </div>
+            {/if}
+            {#if eldritchMadnessLevel >= 5 && (context.editable || cmeLevel > 0)}
+              <div class="critical-madness-events" data-tooltip="Critical Madness Events" aria-label="Critical Madness Events">
+                <i class="fas fa-brain"></i>
+                <Pips
+                  total={2}
+                  selected={cmeLevel}
+                  onChange={async (val) => {
+                    await context.actor.update({
+                      'system.attributes.criticalMadnessEvents': val,
+                    });
+                  }}
+                />
               </div>
             {/if}
             {#if context.editable || context.unlocked}
