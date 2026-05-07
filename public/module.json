@@ -133,12 +133,12 @@
     "requires": [],
     "conflicts": []
   },
-  "url": "https://github.com/kgar/foundry-vtt-tidy-5e-sheets",
-  "download": "https://github.com/kgar/foundry-vtt-tidy-5e-sheets/releases/download/v1.0.0/module.zip",
-  "manifest": "https://github.com/kgar/foundry-vtt-tidy-5e-sheets/releases/latest/download/module.json",
-  "readme": "https://github.com/kgar/foundry-vtt-tidy-5e-sheets/blob/main/README.md",
-  "bugs": "https://github.com/kgar/foundry-vtt-tidy-5e-sheets/issues",
-  "changelog": "https://github.com/kgar/foundry-vtt-tidy-5e-sheets/releases",
+  "url": "https://github.com/Flate/foundry-vtt-tidy-5e-madweave-sheets",
+  "download": "https://github.com/Flate/foundry-vtt-tidy-5e-madweave-sheets/releases/latest/download/module.zip",
+  "manifest": "https://github.com/Flate/foundry-vtt-tidy-5e-madweave-sheets/releases/latest/download/module.json",
+  "readme": "https://github.com/Flate/foundry-vtt-tidy-5e-madweave-sheets/blob/main/README.md",
+  "bugs": "https://github.com/Flate/foundry-vtt-tidy-5e-madweave-sheets/issues",
+  "changelog": "https://github.com/Flate/foundry-vtt-tidy-5e-madweave-sheets/releases",
   "flags": {
     "allowBugReporter": true
   }

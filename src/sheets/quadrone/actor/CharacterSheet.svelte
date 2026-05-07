@@ -329,6 +329,34 @@
     <div class="actor-vitals-container">
       <!-- TODO: Add switch for size -->
       <ActorPortrait />
+      {#if eldritchMadnessLevel > 0 || context.editable}
+        <div class="eldritch-madness-tracker">
+          {#if eldritchMadnessLevel === 5 && (context.editable || cmeLevel > 0)}
+            <div class="tracker-row" data-tooltip="Critical Madness Events" aria-label="Critical Madness Events">
+              <Pips
+                total={2}
+                selected={cmeLevel}
+                onChange={async (val) => {
+                  await context.actor.update({
+                    'system.attributes.criticalMadnessEvents': val,
+                  });
+                }}
+              />
+            </div>
+          {/if}
+          <div class="tracker-row" data-tooltip="Eldritch Madness" aria-label="Eldritch Madness">
+            <Pips
+              total={6}
+              selected={eldritchMadnessLevel}
+              onChange={async (val) => {
+                await context.actor.update({
+                  'system.attributes.eldritchMadness': val,
+                });
+              }}
+            />
+          </div>
+        </div>
+      {/if}
       <div class="actor-vitals theme-dark">
         <div class="hp-row flexrow">
           <div
@@ -606,20 +634,6 @@
                   <i class="fas fa-heart-pulse"></i>
                   <span class="value">{exhaustionLevel}</span>
                 </button>
-              </div>
-            {/if}
-            {#if eldritchMadnessLevel >= 5 && (context.editable || cmeLevel > 0)}
-              <div class="critical-madness-events" data-tooltip="Critical Madness Events" aria-label="Critical Madness Events">
-                <i class="fas fa-brain"></i>
-                <Pips
-                  total={2}
-                  selected={cmeLevel}
-                  onChange={async (val) => {
-                    await context.actor.update({
-                      'system.attributes.criticalMadnessEvents': val,
-                    });
-                  }}
-                />
               </div>
             {/if}
             {#if context.editable || context.unlocked}
