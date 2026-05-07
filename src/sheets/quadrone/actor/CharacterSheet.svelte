@@ -6,6 +6,7 @@
   import { getCharacterSheetQuadroneContext } from 'src/sheets/sheet-context.svelte';
   import CharacterSubtitle from './character-parts/CharacterSubtitle.svelte';
   import ActorExhaustionBar from './parts/ActorExhaustionBar.svelte';
+  import ActorEldritchMadnessBar from './parts/ActorEldritchMadnessBar.svelte';
   import Pips from 'src/components/pips/Pips.svelte';
   import ActorPortrait from './parts/ActorPortrait.svelte';
   import AbilityScore from './character-parts/AbilityScore.svelte';
@@ -54,6 +55,7 @@
   let hpOverlayFocusTarget = $state<'temp' | 'tempmax'>('temp');
   let hpOverlayCloseOnBlur = $state(false);
   let exhaustionBarFocused = $state(false);
+  let eldritchMadnessBarFocused = $state(false);
 
   let hpValueInput = $state<TextInputQuadrone>();
   let hpTempInput = $state<TextInputQuadrone>();
@@ -329,32 +331,17 @@
     <div class="actor-vitals-container">
       <!-- TODO: Add switch for size -->
       <ActorPortrait />
-      {#if eldritchMadnessLevel > 0 || context.editable}
-        <div class="eldritch-madness-tracker">
-          {#if eldritchMadnessLevel === 5 && (context.editable || cmeLevel > 0)}
-            <div class="tracker-row" data-tooltip="Critical Madness Events" aria-label="Critical Madness Events">
-              <Pips
-                total={2}
-                selected={cmeLevel}
-                onChange={async (val) => {
-                  await context.actor.update({
-                    'system.attributes.criticalMadnessEvents': val,
-                  });
-                }}
-              />
-            </div>
-          {/if}
-          <div class="tracker-row" data-tooltip="Eldritch Madness" aria-label="Eldritch Madness">
-            <Pips
-              total={6}
-              selected={eldritchMadnessLevel}
-              onChange={async (val) => {
-                await context.actor.update({
-                  'system.attributes.eldritchMadness': val,
-                });
-              }}
-            />
-          </div>
+      {#if eldritchMadnessLevel === 5 && (context.editable || cmeLevel > 0)}
+        <div class="eldritch-madness-tracker" data-tooltip="Critical Madness Events" aria-label="Critical Madness Events">
+          <Pips
+            total={2}
+            selected={cmeLevel}
+            onChange={async (val) => {
+              await context.actor.update({
+                'system.attributes.criticalMadnessEvents': val,
+              });
+            }}
+          />
         </div>
       {/if}
       <div class="actor-vitals theme-dark">
@@ -580,6 +567,17 @@
                 });
               }}
             />
+          {:else if eldritchMadnessBarFocused}
+            <ActorEldritchMadnessBar
+              level={eldritchMadnessLevel}
+              total={(context.config.conditionTypes as any).eldritchMadness?.levels ?? 6}
+              onClose={() => (eldritchMadnessBarFocused = false)}
+              onEldritchMadnessLevelSet={async (level) => {
+                await context.actor.update({
+                  'system.attributes.eldritchMadness': level,
+                });
+              }}
+            />
           {:else}
             <button
               aria-label={localize('DND5E.HitDiceConfig')}
@@ -621,6 +619,21 @@
                 {/if}
               </div>
             </button>
+            {#if context.editable || eldritchMadnessLevel > 0}
+              <div class={['eldritch-madness', { eldritch: eldritchMadnessLevel > 0 }]}>
+                <button
+                  type="button"
+                  class="button button-borderless button-icon-only"
+                  aria-label="Eldritch Madness"
+                  data-tooltip
+                  onclick={() => (eldritchMadnessBarFocused = !eldritchMadnessBarFocused)}
+                  disabled={!context.editable}
+                >
+                  <i class="fas fa-brain"></i>
+                  <span class="value">{eldritchMadnessLevel}</span>
+                </button>
+              </div>
+            {/if}
             {#if context.editable || exhaustionLevel > 0}
               <div class={['exhaustion', { exhausted: exhaustionLevel > 0 }]}>
                 <button

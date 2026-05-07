@@ -649,44 +649,33 @@
       left: 0;
       right: 0;
       z-index: 9;
-      background: rgba(0, 0, 0, 0.58);
+      background: rgba(0, 0, 0, 0.45);
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 0.1875rem;
-      padding: 0.3125rem 0.25rem;
+      justify-content: center;
+      padding: 0.1875rem 0.25rem;
       pointer-events: auto;
-
-      .tracker-row {
-        display: flex;
-        justify-content: center;
-      }
 
       .pips {
         display: flex;
-        gap: 0.25rem;
+        gap: 0.3125rem;
 
         .pip {
-          border: 0.09375rem solid var(--t5e-color-palette-purple-92);
+          border: 0.0625rem solid rgba(184, 117, 235, 0.5);
           border-radius: 50%;
-          width: 0.75rem;
-          height: 0.75rem;
+          width: 0.4375rem;
+          height: 0.4375rem;
           background: transparent;
           transition: all var(--t5e-transition-default);
 
           &.active {
-            background: var(--t5e-color-palette-purple-92);
-            box-shadow: 0 0 0.3rem var(--t5e-color-palette-purple-92);
+            background: rgba(184, 117, 235, 0.75);
           }
 
           &:hover,
           &:focus-within {
-            background-color: var(--t5e-color-palette-purple-34);
-            border-color: var(--t5e-color-palette-purple-91);
-          }
-
-          &.last-selected {
-            box-shadow: 0 0 0.4rem var(--t5e-color-palette-purple-91);
+            border-color: rgba(195, 100, 231, 0.85);
+            background: rgba(68, 43, 87, 0.8);
           }
         }
       }
@@ -1263,6 +1252,54 @@
         }
       }
 
+      .eldritch-madness {
+        width: auto;
+
+        .button {
+          padding: 0 0 0 0.0625rem;
+          width: 1.5rem;
+
+          i {
+            color: var(--t5e-vitals-button-icon-color);
+          }
+        }
+
+        .value {
+          display: none;
+        }
+
+        &.eldritch {
+          background-color: var(--t5e-color-palette-purple-59);
+
+          i,
+          .value {
+            color: var(--t5e-color-icon-default);
+            text-shadow: 0 0 0.5rem var(--t5e-color-palette-purple-92);
+          }
+
+          .button {
+            padding: 0 0.25rem 0.0625rem 0.5rem;
+            width: auto;
+          }
+
+          .value {
+            display: initial;
+          }
+        }
+      }
+
+      .eldritch-madness.eldritch,
+      .eldritch-madness-bar {
+        button.button-icon-only.button-borderless:not(:first-child) {
+
+          &:hover,
+          &:focus,
+          &:active {
+            background-color: var(--t5e-color-palette-purple-59);
+          }
+        }
+      }
+
       .exhaustion.exhausted,
       .exhaustion-bar {
         button.button-icon-only.button-borderless:not(:first-child) {
@@ -1405,6 +1442,34 @@
           background-color: var(--t5e-color-palette-orange-40);
           color: var(--t5e-color-icon-default);
           text-shadow: 0 0 0.5rem var(--t5e-color-palette-orange-100);
+        }
+      }
+    }
+
+    .eldritch-madness-bar {
+      position: absolute;
+      bottom: -0.125rem;
+      left: -0.125rem;
+      top: -0.125rem;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.125rem;
+      border: 0.125rem solid var(--t5e-color-gold);
+      height: 1.75rem;
+      width: max-content;
+      background-color: var(--t5e-component-card-dark-darker);
+      z-index: 1;
+
+      .button {
+        border-radius: 0;
+
+        &.active {
+          font-weight: var(--font-weight-bold);
+          background-color: var(--t5e-color-palette-purple-59);
+          color: var(--t5e-color-icon-default);
+          text-shadow: 0 0 0.5rem var(--t5e-color-palette-purple-92);
         }
       }
     }
