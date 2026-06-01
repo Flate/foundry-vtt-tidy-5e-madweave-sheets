@@ -1,5 +1,5 @@
 import { CONSTANTS } from 'src/constants';
-import { Tidy5eActorSheetQuadroneBase } from './Tidy5eActorSheetQuadroneBase.svelte';
+import { GetTidy5eActorSheetQuadroneBase } from './Tidy5eActorSheetQuadroneBase.svelte';
 import type {
   Actor5e,
   ActorInventoryTypes,
@@ -41,7 +41,7 @@ import { ItemContext } from 'src/features/item/ItemContext';
 import SectionActions from 'src/features/sections/SectionActions';
 import { TidyHooks } from 'src/foundry/TidyHooks';
 
-export class Tidy5eNpcSheetQuadrone extends Tidy5eActorSheetQuadroneBase<NpcSheetQuadroneContext>(
+export class Tidy5eNpcSheetQuadrone extends GetTidy5eActorSheetQuadroneBase<NpcSheetQuadroneContext>(
   CONSTANTS.SHEET_TYPE_NPC
 ) {
   currentTabId: string;
@@ -739,5 +739,25 @@ export class Tidy5eNpcSheetQuadrone extends Tidy5eActorSheetQuadroneBase<NpcShee
       ['system.attributes.hp.value']: average,
       ['system.attributes.hp.max']: average,
     });
+  }
+
+  /** @override */
+  _showConfiguration(_event: Event, target: HTMLElement) {
+    const config = { document: this.actor };
+
+    let app;
+    switch (target.dataset.config) {
+      case 'habitat':
+        app = new dnd5e.applications.actor.HabitatConfig(config);
+        break;
+      case 'treasure':
+        app = new dnd5e.applications.actor.TreasureConfig(config);
+        break;
+    }
+
+    if (app) {
+      this._renderChild(app);
+      return false;
+    }
   }
 }

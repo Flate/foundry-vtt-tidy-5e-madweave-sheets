@@ -25,6 +25,7 @@ export type ThemeableSheetType =
   | Tidy5eContainerSheetQuadrone;
 
 export class ThemeQuadrone {
+  static readonly DEFAULT_ACCENT_COLOR = 'rgb(116, 27, 43)';
   static readonly DEFAULT_PORTRAIT_SHAPE: PortraitShape = 'transparent';
   // a collection of stylesheets currently only used for popped out stylesheets
   private static readonly _externalStylesheets: Set<CSSStyleSheet> = new Set();
@@ -56,10 +57,12 @@ export class ThemeQuadrone {
     alternateDefaults: Partial<ThemeSettingsV3> = {}
   ): ThemeSettingsV3 {
     const defaults = {
-      accentColor: '',
+      accentColor: this.DEFAULT_ACCENT_COLOR,
+      useBasicTheme: false,
       useHeaderBackground: true,
       headerColor: '',
       actorHeaderBackground: '',
+      headerBackgroundColor: '',
       itemSidebarBackground: '',
       portraitShape: undefined,
       rarityColors: {},
@@ -76,8 +79,19 @@ export class ThemeQuadrone {
     );
   }
 
+  /** Get any settings that have been changed, or null  */
+  static getChangedWorldThemeSettingsForForm(): Partial<ThemeSettingsV3> {
+    return SettingsProvider.settings.worldThemeSettings.get() ?? {};
+  }
+
   static saveWorldThemeSettings(settings: ThemeSettingsV3) {
     const toSave = { ...settings };
+
+    for (const [key, value] of Object.entries(toSave)) {
+      if (isNil(value, '')) {
+        delete toSave[key as keyof ThemeSettingsV3];
+      }
+    }
 
     return FoundryAdapter.setTidySetting('worldThemeSettings', toSave);
   }
@@ -132,8 +146,6 @@ export class ThemeQuadrone {
   static async saveSheetThemeSettings(doc: any, settings: ThemeSettingsV3) {
     const toSave = { ...settings };
 
-    // TODO: Figure out how to do this with a single call. Currently, it does not fully replace the information.
-    await TidyFlags.sheetThemeSettings.unset(doc);
     const result = await TidyFlags.sheetThemeSettings.set(doc, toSave);
 
     await this.syncSystemTokenPortraitSetting(doc, settings.portraitShape);
@@ -252,10 +264,11 @@ export class ThemeQuadrone {
   }
 
   static async updatePortraitShape(doc: any, newShape: PortraitShape) {
-    const settings = this.getSheetThemeSettings({ doc: doc });
-    settings.portraitShape = newShape;
-    await this.saveSheetThemeSettings(doc, settings);
-    await this.syncSystemTokenPortraitSetting(doc, newShape);
+    await doc.update({
+      [`${TidyFlags.sheetThemeSettings.prop}.portraitShape`]: newShape,
+      [`flags.dnd5e.${CONSTANTS.SYSTEM_FLAG_SHOW_TOKEN_PORTRAIT}`]:
+        newShape === 'token',
+    });
   }
 
   static async syncSystemTokenPortraitSetting(

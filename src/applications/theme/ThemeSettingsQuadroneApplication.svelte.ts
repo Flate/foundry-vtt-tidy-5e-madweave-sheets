@@ -11,7 +11,7 @@ import type {
   ApplicationConfiguration,
   ApplicationRenderOptions,
 } from 'src/types/application.types';
-import { mount } from 'svelte';
+import { mount, type Component } from 'svelte';
 import ThemeSettingsQuadrone from './ThemeSettingsQuadrone.svelte';
 import { TidyFlags } from 'src/foundry/TidyFlags';
 import { TidyHooks } from 'src/foundry/TidyHooks';
@@ -26,9 +26,11 @@ export type ThemeColorSettingConfigEntry = ThemeColorSetting & {
 export type ThemeSettingsContext = {
   value: {
     accentColor: string;
-    useHeaderBackground: boolean;
+    useBasicTheme: boolean | null;
+    useHeaderBackground: boolean | null;
     headerColor: string;
     actorHeaderBackground: string;
+    headerBackgroundColor: string;
     itemSidebarBackground: string;
     portraitShape: PortraitShape | undefined;
     rarityColors: ThemeColorSettingConfigEntry[];
@@ -46,9 +48,11 @@ export class ThemeSettingsQuadroneApplication extends SvelteApplicationMixin<Con
   _settings: ThemeSettingsContext = $state({
     value: {
       accentColor: '',
-      useHeaderBackground: true,
+      useBasicTheme: null,
+      useHeaderBackground: null,
       headerColor: '',
       actorHeaderBackground: '',
+      headerBackgroundColor: '',
       itemSidebarBackground: '',
       portraitShape: undefined,
       rarityColors: [],
@@ -99,16 +103,19 @@ export class ThemeSettingsQuadroneApplication extends SvelteApplicationMixin<Con
   get title() {
     return this.document
       ? FoundryAdapter.localize(`TIDY5E.ThemeSettings.Sheet.title`, {
-          userName: this.document.name,
-        })
+        userName: this.document.name,
+      })
       : FoundryAdapter.localize('TIDY5E.ThemeSettings.SheetMenu.buttonLabel');
   }
 
   _createComponent(node: HTMLElement): Record<string, any> {
     this._settings = this._getSettings();
     const placeholders = this.document
-      ? this._mapSettings(ThemeQuadrone.getWorldThemeSettings())
+      ? this._mapSettings(ThemeQuadrone.getWorldThemeSettings(), {
+        allowNullBooleans: false,
+      })
       : undefined;
+
 
     const component = mount(ThemeSettingsQuadrone, {
       target: node,
@@ -128,55 +135,49 @@ export class ThemeSettingsQuadroneApplication extends SvelteApplicationMixin<Con
     return {};
   }
 
-  _getSettings(settingsOverride?: ThemeSettingsV3) {
-    let worldSettings = ThemeQuadrone.getWorldThemeSettings();
+  _getSettings(settingsOverride?: Partial<ThemeSettingsV3>) {
+    const allowNullBooleans = !!this.document;
 
-    let themeSettings =
+    const source =
       settingsOverride ??
-      structuredClone(
-        this.document
-          ? ThemeQuadrone.getSheetThemeSettings({
-              doc: this.document,
-              applyWorldThemeSetting: false,
-              alternateDefaults: {
-                useHeaderBackground: worldSettings.useHeaderBackground,
-              },
-            })
-          : worldSettings
-      );
+      (this.document
+        ? TidyFlags.sheetThemeSettings.get(this.document) ?? {}
+        : ThemeQuadrone.getChangedWorldThemeSettingsForForm());
 
-    let context: ThemeSettingsContext = this._mapSettings(themeSettings);
-
-    return context;
+    return this._mapSettings(source, { allowNullBooleans });
   }
 
-  private _mapSettings(themeSettings: ThemeSettingsV3): ThemeSettingsContext {
+  private _mapSettings(
+    source: Partial<ThemeSettingsV3>,
+    options: { allowNullBooleans: boolean }
+  ): ThemeSettingsContext {
+    const nullableBool = (value: boolean | null | undefined, fallback: boolean) =>
+      options.allowNullBooleans ? value ?? null : value ?? fallback;
+
     return {
       value: {
-        accentColor: themeSettings.accentColor,
-        useHeaderBackground: themeSettings.useHeaderBackground,
-        headerColor: themeSettings.headerColor,
-        actorHeaderBackground: themeSettings.actorHeaderBackground,
-        itemSidebarBackground: themeSettings.itemSidebarBackground,
-        portraitShape: themeSettings.portraitShape,
+        accentColor: source.accentColor ?? '',
+        useBasicTheme: nullableBool(source.useBasicTheme, false),
+        useHeaderBackground: nullableBool(source.useHeaderBackground, true),
+        headerColor: source.headerColor ?? '',
+        actorHeaderBackground: source.actorHeaderBackground ?? '',
+        headerBackgroundColor: source.headerBackgroundColor ?? '',
+        itemSidebarBackground: source.itemSidebarBackground ?? '',
+        portraitShape: source.portraitShape,
         rarityColors: Object.entries(CONFIG.DND5E.itemRarity).map(
-          ([key, label]) => {
-            return {
-              label,
-              key: key,
-              value: themeSettings.rarityColors[key] ?? '',
-            };
-          }
+          ([key, label]) => ({
+            label,
+            key,
+            value: source.rarityColors?.[key] ?? '',
+          })
         ),
         spellPreparationMethodColors: Object.entries(
           CONFIG.DND5E.spellcasting
-        ).map(([key, config]) => {
-          return {
-            label: config.label,
-            key: key,
-            value: themeSettings.spellPreparationMethodColors[key] ?? '',
-          };
-        }),
+        ).map(([key, config]) => ({
+          label: config.label,
+          key,
+          value: source.spellPreparationMethodColors?.[key] ?? '',
+        })),
       },
     };
   }
@@ -191,38 +192,72 @@ export class ThemeSettingsQuadroneApplication extends SvelteApplicationMixin<Con
   }
 
   async apply() {
-    const context = this._settings;
-
-    let themeSettings: ThemeSettingsV3 = this.mapContextToSettings(context);
+    const changedSettings = this.mapContextToChangedSettings(this._settings);
 
     if (this.document) {
-      await ThemeQuadrone.saveSheetThemeSettings(this.document, themeSettings);
+      if (Object.keys(changedSettings).length === 0) {
+        await TidyFlags.sheetThemeSettings.unset(this.document);
+      } else {
+        await ThemeQuadrone.saveSheetThemeSettings(
+          this.document,
+          changedSettings as ThemeSettingsV3
+        );
+      }
     } else {
-      await ThemeQuadrone.saveWorldThemeSettings(themeSettings);
+      await ThemeQuadrone.saveWorldThemeSettings(changedSettings as ThemeSettingsV3);
     }
   }
 
-  mapContextToSettings(context: ThemeSettingsContext): ThemeSettingsV3 {
-    return {
-      accentColor: context.value.accentColor ?? '',
-      useHeaderBackground: context.value.useHeaderBackground,
-      headerColor: context.value.headerColor,
-      actorHeaderBackground: context.value.actorHeaderBackground,
-      itemSidebarBackground: context.value.itemSidebarBackground,
-      portraitShape: context.value.portraitShape,
-      rarityColors: context.value.rarityColors
-        .filter((t) => !isNil(t.value.trim(), ''))
-        .reduce<Record<string, string>>((prev, curr) => {
-          prev[curr.key] = curr.value;
-          return prev;
-        }, {}),
-      spellPreparationMethodColors: context.value.spellPreparationMethodColors
-        .filter((t) => !isNil(t.value.trim(), ''))
-        .reduce<Record<string, string>>((prev, curr) => {
-          prev[curr.key] = curr.value;
-          return prev;
-        }, {}),
-    };
+  // Only capture settings that have been changed
+  mapContextToChangedSettings(
+    context: ThemeSettingsContext
+  ): Partial<ThemeSettingsV3> {
+    const currentSettings = context.value;
+    const changedSettings: Partial<ThemeSettingsV3> = {};
+
+    const stringFields = [
+      'accentColor',
+      'headerColor',
+      'actorHeaderBackground',
+      'headerBackgroundColor',
+      'itemSidebarBackground',
+    ] as const;
+    for (const key of stringFields) {
+      if (!isNil(currentSettings[key], '')) {
+        changedSettings[key] = currentSettings[key];
+      }
+    }
+
+    if (currentSettings.useBasicTheme !== null) {
+      changedSettings.useBasicTheme = currentSettings.useBasicTheme;
+    }
+    if (currentSettings.useHeaderBackground !== null) {
+      changedSettings.useHeaderBackground = currentSettings.useHeaderBackground;
+    }
+    if (currentSettings.portraitShape !== undefined) {
+      changedSettings.portraitShape = currentSettings.portraitShape;
+    }
+
+    const rarities = this._collectColors(currentSettings.rarityColors);
+    if (Object.keys(rarities).length) {
+      changedSettings.rarityColors = rarities;
+    }
+
+    const methods = this._collectColors(currentSettings.spellPreparationMethodColors);
+    if (Object.keys(methods).length) {
+      changedSettings.spellPreparationMethodColors = methods;
+    }
+
+    return changedSettings;
+  }
+
+  private _collectColors(entries: ThemeColorSettingConfigEntry[]) {
+    return entries
+      .filter((t) => !isNil(t.value.trim(), ''))
+      .reduce<Record<string, string>>((prev, curr) => {
+        prev[curr.key] = curr.value;
+        return prev;
+      }, {});
   }
 
   async useDefault() {

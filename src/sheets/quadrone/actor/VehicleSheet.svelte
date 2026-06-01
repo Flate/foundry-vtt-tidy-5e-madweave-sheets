@@ -89,19 +89,27 @@
         smallerAbilityThresholdRems={4}
         constantHorizontalSpaceRems={20.5}
       >
-        <div class="initiative-container flexcol">
+        <div class="ability initiative flexcol">
           <div
-            class="initiative score bonus-container"
+            class="initiative-score-container"
             data-tooltip="DND5E.Initiative"
           >
             <button
               type="button"
-              class="button-borderless initiative-roll-button"
+              class="button-borderless ability-roll-button"
               data-action="roll"
               data-type="initiative"
               data-has-roll-modes
             >
-              {localize('DND5E.InitiativeAbbr')}
+              <span class="ability-abbr">{localize('DND5E.InitiativeAbbr')}</span>
+              <span class="ability-label-container initiative-bonus">
+                <span class="modifier color-text-lightest">
+                  {ini.sign}
+                </span>
+                <span class="bonus color-text-default">
+                  {ini.value}
+                </span>
+              </span>
             </button>
             {#if context.unlocked}
               <button
@@ -109,20 +117,12 @@
                 data-tooltip="DND5E.InitiativeConfig"
                 type="button"
                 class="button button-borderless button-icon-only button-config"
-                onclick={() =>
-                  FoundryAdapter.renderInitiativeConfig(context.actor)}
+                data-action="showConfiguration"
+                data-config="initiative"
               >
                 <i class="fas fa-cog"></i>
               </button>
             {/if}
-            <div class="initiative-bonus flexrow">
-              <span class="modifier color-text-lightest font-label-xlarge">
-                {ini.sign}
-              </span>
-              <span class="bonus color-text-default font-data-xlarge">
-                {ini.value}
-              </span>
-            </div>
           </div>
           <div class="ability-labels flexcol">
             <span class="label font-label-medium color-text-lightest"
@@ -142,8 +142,6 @@
               context.actor.update({
                 [`system.abilities.${ability.key}.value`]: score,
               })}
-            onConfigClicked={(id) =>
-              FoundryAdapter.renderAbilityConfig(context.actor, id)}
             disabled={!context.owner}
           />
         {/each}
@@ -200,7 +198,8 @@
             data-tooltip="DND5E.ArmorConfig"
             type="button"
             class="button button-borderless button-icon-only button-config"
-            onclick={(ev) => FoundryAdapter.renderArmorConfig(context.actor)}
+            data-action="showConfiguration"
+            data-config="armorClass"
           >
             <i class="fas fa-cog"></i>
           </button>

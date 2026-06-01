@@ -45,6 +45,9 @@ import { ItemSheetRuntime } from 'src/runtime/item/ItemSheetRuntime';
 import { SheetTabConfigurationQuadroneApplication } from 'src/applications/tab-configuration/SheetTabConfigurationQuadroneApplication.svelte';
 import { ThemeSettingsQuadroneApplication } from 'src/applications/theme/ThemeSettingsQuadroneApplication.svelte';
 import type { SpellProgressionConfig } from 'src/foundry/config.types';
+import { ThemeQuadrone } from 'src/theme/theme-quadrone.svelte';
+import type { ThemeSettingsV3 } from 'src/theme/theme-quadrone.types';
+import { getThemeV2 } from 'src/theme/theme';
 import TableRowActionsRuntime from 'src/runtime/tables/TableRowActionsRuntime.svelte';
 
 export class Tidy5eItemSheetQuadrone extends TidyExtensibleDocumentSheetMixin<
@@ -141,6 +144,7 @@ export class Tidy5eItemSheetQuadrone extends TidyExtensibleDocumentSheetMixin<
           }),
         );
       },
+      showConfiguration: Tidy5eItemSheetQuadrone.#showConfiguration,
     },
     dragDrop: [
       {
@@ -154,6 +158,36 @@ export class Tidy5eItemSheetQuadrone extends TidyExtensibleDocumentSheetMixin<
     ],
     submitOnClose: true,
   };
+
+  _updateFrame(options: TidyDocumentSheetRenderOptions = {}) {
+    super._updateFrame(options);
+
+    const themeSettings = ThemeQuadrone.getSheetThemeSettings({
+      doc: this.document,
+    });
+    this._applySheetThemeClasses(themeSettings);
+  }
+
+  _applySheetThemeClasses(themeSettings: ThemeSettingsV3) {
+    const isBasic = themeSettings.useBasicTheme;
+    const foundryThemeIsDark = getThemeV2(this.document) === 'dark';
+
+    this.element.classList.toggle('theme-parchment', isBasic);
+    this.element.classList.toggle('theme-basic', isBasic);
+
+    for (const node of this.element.querySelectorAll(
+      '.window-header, .sheet-header',
+    )) {
+      node.classList.toggle('theme-dark', foundryThemeIsDark);
+    }
+  }
+
+  onThemeConfigChanged(settingsOverride?: ThemeSettingsV3) {
+    const themeSettings =
+      settingsOverride ??
+      ThemeQuadrone.getSheetThemeSettings({ doc: this.document });
+    this._applySheetThemeClasses(themeSettings);
+  }
 
   selectTab(tabId: string) {
     this.onTabSelected(tabId);
@@ -995,6 +1029,36 @@ export class Tidy5eItemSheetQuadrone extends TidyExtensibleDocumentSheetMixin<
   }
 
   /* -------------------------------------------- */
+  /*  Sheet Actions                               */
+  /* -------------------------------------------- */
+
+  static async #showConfiguration(
+    this: Tidy5eItemSheetQuadrone,
+    _event: Event,
+    target: HTMLElement,
+  ) {
+    switch (target.dataset.config) {
+      case 'movement':
+      case 'senses':
+        return FoundryAdapter.renderMovementSensesConfig(
+          this.item,
+          target.dataset.config,
+        );
+      case 'source':
+        return FoundryAdapter.renderSourceConfig(this.item, 'system.source');
+      case 'starting-equipment':
+        return FoundryAdapter.openStartingEquipmentConfig(this.item);
+      case 'type':
+        return this._renderChild(
+          new dnd5e.applications.shared.CreatureTypeConfig({
+            document: this.item,
+            keyPath: 'type',
+          }),
+        );
+    }
+  }
+
+  /* -------------------------------------------- */
   /*  Drag and Drop                               */
   /* -------------------------------------------- */
 
@@ -1013,6 +1077,11 @@ export class Tidy5eItemSheetQuadrone extends TidyExtensibleDocumentSheetMixin<
   _onDragStart(
     event: DragEvent & { currentTarget: HTMLElement; target: HTMLElement },
   ) {
+    // Let content links (enricher items) use default drag/drop so they aren't pulled into advancement drag behaviors.
+    if (event.target.classList.contains('content-link')) {
+      return;
+    }
+
     const dragged = event.currentTarget;
 
     // Create drag data
@@ -1038,9 +1107,7 @@ export class Tidy5eItemSheetQuadrone extends TidyExtensibleDocumentSheetMixin<
       dragged.closest('[data-id]')
     ) {
       const { id } = dragged.closest<HTMLElement>('[data-id]')!.dataset ?? {};
-      dragData = this.item.system.advancement
-        .get(id)
-        ?.toDragData();
+      dragData = this.item.system.advancement.get(id)?.toDragData();
     }
 
     if (!dragData) return;
@@ -1261,7 +1328,10 @@ export class Tidy5eItemSheetQuadrone extends TidyExtensibleDocumentSheetMixin<
   async _onDropItem(event: DragEvent, data: object) {
     const item = await Item.implementation.fromDropData(data);
 
-    if (item?.type === CONSTANTS.ITEM_TYPE_SPELL && this.item.system.activities) {
+    if (
+      item?.type === CONSTANTS.ITEM_TYPE_SPELL &&
+      this.item.system.activities
+    ) {
       this._onDropSpell(event, item);
     } else {
       this._onDropAdvancement(event, data);

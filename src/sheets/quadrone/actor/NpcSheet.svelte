@@ -170,22 +170,30 @@
         smallerAbilityThresholdRems={4}
         constantHorizontalSpaceRems={20.5}
       >
-        <div class="initiative-container flexcol">
+        <div class="ability initiative flexcol">
           <div
             class={[
-              'initiative score bonus-container',
+              'initiative-score-container',
               Number(ini.value) >= 10 ? 'double-digit' : '',
             ]}
             data-tooltip="DND5E.Initiative"
           >
             <button
               type="button"
-              class="button-borderless initiative-roll-button"
+              class="button-borderless ability-roll-button"
               data-action="roll"
               data-type="initiative"
               data-has-roll-modes
             >
-              {localize('DND5E.InitiativeAbbr')}
+              <span class="ability-abbr color-text-gold">{localize('DND5E.InitiativeAbbr')}</span>
+              <span class="ability-label-container initiative-bonus">
+                <span class="modifier color-text-lightest">
+                  {ini.sign}
+                </span>
+                <span class="bonus color-text-default">
+                  {ini.value}
+                </span>
+              </span>
             </button>
             {#if context.unlocked}
               <button
@@ -193,20 +201,12 @@
                 data-tooltip="DND5E.InitiativeConfig"
                 type="button"
                 class="button button-borderless button-icon-only button-config"
-                onclick={() =>
-                  FoundryAdapter.renderInitiativeConfig(context.actor)}
+                data-action="showConfiguration"
+                data-config="initiative"
               >
                 <i class="fas fa-cog"></i>
               </button>
             {/if}
-            <div class="initiative-bonus flexrow">
-              <span class="modifier color-text-lightest font-label-xlarge">
-                {ini.sign}
-              </span>
-              <span class="bonus color-text-default font-data-xlarge">
-                {ini.value}
-              </span>
-            </div>
           </div>
           <div class="ability-labels flexcol">
             <span class="label font-label-medium color-text-lightest"
@@ -226,8 +226,6 @@
               context.actor.update({
                 [`system.abilities.${ability.key}.value`]: score,
               })}
-            onConfigClicked={(id) =>
-              FoundryAdapter.renderAbilityConfig(context.actor, id)}
             disabled={!context.owner}
           />
         {/each}
@@ -344,8 +342,8 @@
                     data-tooltip="DND5E.DeathSaveConfigure"
                     type="button"
                     class="button button-borderless button-icon-only button-config"
-                    onclick={(ev) =>
-                      FoundryAdapter.renderDeathConfig(context.actor)}
+                    data-action="showConfiguration"
+                    data-config="death"
                   >
                     <i class="fas fa-cog"></i>
                   </button>
@@ -353,7 +351,11 @@
                   <button
                     type="button"
                     class="button button-borderless button-icon-only"
-                    aria-label={localize(context.showDeathSaves ? 'DND5E.DeathSaveHide' : 'DND5E.DeathSaveShow')}
+                    aria-label={localize(
+                      context.showDeathSaves
+                        ? 'DND5E.DeathSaveHide'
+                        : 'DND5E.DeathSaveShow',
+                    )}
                     data-tooltip=""
                     onclick={() => context.actor.sheet.toggleDeathSaves()}
                     disabled={!context.editable}
@@ -371,19 +373,6 @@
                   </button>
                 {/if}
               </div>
-
-              <!-- {#if context.unlocked}
-                <button
-                  aria-label="Configure NPC"
-                  data-tooltip="DND5E.DeathSaveConfigure"
-                  type="button"
-                  class="button button-borderless button-icon-only button-config"
-                  onclick={(ev) =>
-                    FoundryAdapter.renderDeathConfig(context.actor)}
-                >
-                  <i class="fas fa-cog"></i>
-                </button>
-              {/if} -->
             {/if}
           </div>
         {/if}
@@ -406,7 +395,8 @@
             data-tooltip="DND5E.ArmorConfig"
             type="button"
             class="button button-borderless button-icon-only button-config"
-            onclick={(ev) => FoundryAdapter.renderArmorConfig(context.actor)}
+            data-action="showConfiguration"
+            data-config="armorClass"
           >
             <i class="fas fa-cog"></i>
           </button>

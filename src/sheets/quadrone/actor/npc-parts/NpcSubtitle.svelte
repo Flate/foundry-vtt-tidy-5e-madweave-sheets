@@ -21,6 +21,8 @@
     context.system.details.alignment,
   );
 
+  let isBasicTheme = $derived(context.themeSettings.useBasicTheme);
+
   let species = $derived.by<string | undefined>(() => {
     if (context.system.details.race?.name) {
       return context.system.details.race.name;
@@ -66,13 +68,13 @@
       {/if}
       {@render speedSenseSummary(sense, ['sense', 'main-sense'])}
     {/each}
-    {#if size}
+    {#if size && !isBasicTheme}
       <div class="divider-dot"></div>
       <span class="size">
         <span class="font-label-medium color-text-gold">{size}</span>
       </span>
     {/if}
-    {#if !isNil(context.system.details.type.label, '')}
+    {#if !isNil(context.system.details.type.label, '') && !isBasicTheme}
       <div class="divider-dot"></div>
       <span class="creature-type">
         <span class="font-label-medium color-text-gold">
@@ -86,7 +88,7 @@
         <span class="font-label-medium color-text-gold">{species}</span>
       </span>
     {/if}
-    {#if alignment}
+    {#if alignment && !isBasicTheme}
       <div class="divider-dot"></div>
       <span class="alignment">
         <span class="font-label-medium color-text-gold">{alignment}</span>
@@ -152,8 +154,9 @@
                 data-tooltip
                 type="button"
                 class="button button-borderless button-icon-only button-config"
-                onclick={() =>
-                  FoundryAdapter.openConcentrationConfig(context.actor)}
+                data-action="showConfiguration"
+                data-config="ability"
+                data-ability="concentration"
               >
                 <i class="fas fa-cog"></i>
               </button>

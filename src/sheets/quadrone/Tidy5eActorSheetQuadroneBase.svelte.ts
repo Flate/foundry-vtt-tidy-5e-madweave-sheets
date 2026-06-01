@@ -62,10 +62,12 @@ import { SheetPinsProvider } from 'src/features/sheet-pins/SheetPinsProvider';
 import type { SheetPinFlag } from 'src/api';
 import type { ThemeSettingsV3 } from 'src/theme/theme-quadrone.types';
 import { Container } from 'src/features/containers/Container';
+import { getThemeV2 } from 'src/theme/theme';
+import { SpecialTraitsApplication } from 'src/applications-quadrone/special-traits/SpecialTraitsApplication.svelte';
 
 const POST_WINDOW_TITLE_ANCHOR_CLASS_NAME = 'sheet-warning-anchor';
 
-export function Tidy5eActorSheetQuadroneBase<
+export function GetTidy5eActorSheetQuadroneBase<
   TContext extends ActorSheetQuadroneContext
 >(sheetType: string) {
   abstract class Tidy5eActorSheetQuadroneBase extends TidyExtensibleDocumentSheetMixin(
@@ -195,6 +197,7 @@ export function Tidy5eActorSheetQuadroneBase<
             document: this.document,
           }));
         },
+        showConfiguration: Tidy5eActorSheetQuadroneBase.#showConfiguration,
       },
       dragDrop: [
         {
@@ -212,9 +215,8 @@ export function Tidy5eActorSheetQuadroneBase<
     /** @inheritdoc */
     get title() {
       if (!this.actor.isToken) return this.actor.name;
-      return `[${game.i18n.localize(TokenDocument.metadata.label)}] ${
-        this.actor.name
-      }`;
+      return `[${game.i18n.localize(TokenDocument.metadata.label)}] ${this.actor.name
+        }`;
     }
 
     selectTab(tabId: string) {
@@ -382,16 +384,16 @@ export function Tidy5eActorSheetQuadroneBase<
       const ctx = (context.itemContext[item.id] ??= {});
 
       ctx.containerName = this.actor.items.get(item.system.container)?.name;
-      
+
       if (item.type === CONSTANTS.ITEM_TYPE_CONTAINER) {
         ctx.containerCapacity = await item.system.computeCapacity();
-        
+
         ctx.containerContents = await Container.getContainerContents(item, {
           hasActor: true,
           unlocked: context.unlocked,
         });
       }
-      
+
       if (item.system.activities) {
         ctx.activities = Activities.getVisibleActivities(
           item,
@@ -400,7 +402,7 @@ export function Tidy5eActorSheetQuadroneBase<
       }
 
       ctx.linkedUses = Activities.getLinkedUses(item);
-      
+
       ctx.totalWeight = item.system.totalWeight?.toNearest(0.1);
     }
 
@@ -411,7 +413,7 @@ export function Tidy5eActorSheetQuadroneBase<
       const themeSettings = ThemeQuadrone.getSheetThemeSettings({ doc: actor });
       const showToken =
         actor.flags.dnd5e?.[CONSTANTS.SYSTEM_FLAG_SHOW_TOKEN_PORTRAIT] ===
-          true || themeSettings.portraitShape === 'token';
+        true || themeSettings.portraitShape === 'token';
       const effectiveToken = actor.isToken ? actor.token : actor.prototypeToken;
       const isRandom = !!effectiveToken?.randomImg;
       const rawSrc = showToken
@@ -545,12 +547,12 @@ export function Tidy5eActorSheetQuadroneBase<
 
           const spellcasting = cls.system.spellcasting
             ? {
-                dc: cls.system.spellcasting.save,
-                ability: (
-                  CONFIG.DND5E.abilities[cls.system.spellcasting.ability]
-                    ?.abbreviation ?? cls.system.spellcasting.ability
-                )?.toLocaleUpperCase(),
-              }
+              dc: cls.system.spellcasting.save,
+              ability: (
+                CONFIG.DND5E.abilities[cls.system.spellcasting.ability]
+                  ?.abbreviation ?? cls.system.spellcasting.ability
+              )?.toLocaleUpperCase(),
+            }
             : undefined;
 
           const subclass = subclasses.findSplice(
@@ -762,7 +764,7 @@ export function Tidy5eActorSheetQuadroneBase<
           traits.weapon.push(value);
         }
         (value.icons ??= []).push({
-          icon: 'fa-solid fa-circle-star color-icon-theme mastery',
+          icon: 'fa-solid fa-circle-star color-icon-theme-highlight mastery',
           label: game.i18n.format('DND5E.WEAPON.Mastery.Label'),
         });
       }
@@ -863,7 +865,6 @@ export function Tidy5eActorSheetQuadroneBase<
           if (excludeSpeed(key) || config.hidden) {
             return acc;
           }
-          
           if (systemMovement[key] === 0) {
             return acc;
           }
@@ -892,8 +893,8 @@ export function Tidy5eActorSheetQuadroneBase<
           left.key === CONSTANTS.MOVEMENT_WALK
             ? -1
             : right.key === CONSTANTS.MOVEMENT_WALK
-            ? 1
-            : +(right.value ?? 0) - +(left.value ?? 0)
+              ? 1
+              : +(right.value ?? 0) - +(left.value ?? 0)
         );
 
       if (speeds.length === 0) {
@@ -937,10 +938,10 @@ export function Tidy5eActorSheetQuadroneBase<
         const label = hasAll
           ? FoundryAdapter.localize('TIDY5E.CharacterTraits.IgnoreAllDifficultTerrain')
           : new Intl.ListFormat(game.i18n.lang).format(
-              [...systemMovement.ignoredDifficultTerrain]
-                .map((t: string) => getTerrainLabel(t))
-                .filter((l): l is string => !!l)
-            );
+            [...systemMovement.ignoredDifficultTerrain]
+              .map((t: string) => getTerrainLabel(t))
+              .filter((l): l is string => !!l)
+          );
 
         speeds.push({
           key: 'ignoredDifficultTerrain',
@@ -994,8 +995,8 @@ export function Tidy5eActorSheetQuadroneBase<
         left.key === 'darkvision'
           ? -1
           : right.key === 'darkvision'
-          ? 1
-          : +right.value - +left.value
+            ? 1
+            : +right.value - +left.value
       );
     }
 
@@ -1127,25 +1128,26 @@ export function Tidy5eActorSheetQuadroneBase<
     _updateFrame(options: ApplicationRenderOptions) {
       super._updateFrame(options);
 
-      const themeSettings =
-        this._context.data?.themeSettings ??
-        ThemeQuadrone.getSheetThemeSettings({
-          doc: this.actor,
-        });
-
+      const themeSettings = ThemeQuadrone.getSheetThemeSettings({
+        doc: this.actor,
+      });
+      
       this._applySheetThemeClasses(themeSettings);
     }
 
     _applySheetThemeClasses(themeSettings: ThemeSettingsV3) {
-      this.element.classList.toggle(
-        'sheet-parchment',
-        !themeSettings.useHeaderBackground
-      );
+      const isBasic = themeSettings.useBasicTheme;
+      const isParchment = !themeSettings.useHeaderBackground || isBasic;
+      const foundryThemeIsDark = getThemeV2(this.actor) === 'dark';
+      const isDark = themeSettings.useHeaderBackground || foundryThemeIsDark;
+
+      this.element.classList.toggle('theme-parchment', isParchment);
+      this.element.classList.toggle('theme-basic', isBasic);
 
       for (const node of this.element.querySelectorAll(
         '.window-header, .sheet-header'
       )) {
-        node.classList.toggle('theme-dark', themeSettings.useHeaderBackground);
+        node.classList.toggle('theme-dark', isDark);
       }
     }
 
@@ -1179,10 +1181,7 @@ export function Tidy5eActorSheetQuadroneBase<
     onThemeConfigChanged(settingsOverride?: ThemeSettingsV3) {
       const themeSettings =
         settingsOverride ??
-        ThemeQuadrone.getSheetThemeSettings({
-          doc: this.actor,
-        });
-
+        ThemeQuadrone.getSheetThemeSettings({ doc: this.actor });
       this._applySheetThemeClasses(themeSettings);
     }
 
@@ -1530,8 +1529,8 @@ export function Tidy5eActorSheetQuadroneBase<
         data.doc.documentName === CONSTANTS.DOCUMENT_NAME_ITEM
           ? 'item'
           : data.doc.documentName === CONSTANTS.DOCUMENT_NAME_ACTIVITY
-          ? 'activity'
-          : undefined;
+            ? 'activity'
+            : undefined;
 
       if (!pinType) {
         return;
@@ -1908,7 +1907,7 @@ export function Tidy5eActorSheetQuadroneBase<
         // Ensure that this item isn't violating the singleton rule
         const dataModel =
           CONFIG.Item.dataModels[
-            itemData.type as keyof typeof CONFIG.Item.dataModels
+          itemData.type as keyof typeof CONFIG.Item.dataModels
           ];
         const singleton = dataModel?.metadata.singleton ?? false;
         if (singleton && this.actor.itemTypes[itemData.type].length) {
@@ -2255,6 +2254,114 @@ export function Tidy5eActorSheetQuadroneBase<
      */
     _roll(event: Event, target: HTMLElement): boolean | void {}
 
+    static async #showConfiguration(
+      this: Tidy5eActorSheetQuadroneBase,
+      event: Event,
+      target: HTMLElement,
+    ) {
+      if (this._showConfiguration(event, target) === false) {
+        return;
+      }
+
+      if (target.dataset.trait) {
+        const trait = target.dataset.trait;
+        switch (trait) {
+          case 'di':
+          case 'dm':
+          case 'dr':
+          case 'dv':
+            return FoundryAdapter.openDamagesConfig(this.actor, trait);
+          case 'languages':
+            return FoundryAdapter.renderLanguagesConfig(this.actor);
+          case 'tool':
+            return FoundryAdapter.renderToolsConfig(this.actor);
+          case 'weapon':
+            return FoundryAdapter.renderWeaponsConfig(this.actor);
+          default:
+            return FoundryAdapter.renderTraitsConfig(this.actor, trait, {
+              width: 400,
+            });
+        }
+      }
+
+      switch (target.dataset.config) {
+        case 'ability':
+          const ability =
+            target.closest<HTMLElement>('[data-ability]')?.dataset.ability;
+
+          if (ability === 'concentration') {
+            return FoundryAdapter.openConcentrationConfig(this.actor);
+          }
+
+          return FoundryAdapter.renderAbilityConfig(this.actor, ability);
+        case 'armorClass':
+          return FoundryAdapter.renderArmorConfig(this.actor);
+        case 'creatureType':
+          return this._renderChild(
+            new dnd5e.applications.shared.CreatureTypeConfig(
+              this.actor.system.details.race?.id
+                ? { document: this.actor.system.details.race, keyPath: 'type' }
+                : { document: this.actor },
+            ),
+          );
+        case 'death':
+          return FoundryAdapter.renderDeathConfig(this.actor);
+        case 'hitDice':
+          return FoundryAdapter.renderHitDiceConfig(this.actor);
+        case 'hitPoints':
+          return FoundryAdapter.renderHitPointsConfig(this.actor);
+        case 'initiative':
+          return FoundryAdapter.renderInitiativeConfig(this.actor);
+        case 'movement':
+        case 'senses':
+          return FoundryAdapter.renderMovementSensesConfig(
+            this.actor,
+            target.dataset.config,
+          );
+        case 'skill':
+          const skill = target.closest<HTMLElement>('[data-key]')?.dataset.key;
+
+          if (skill) {
+            return FoundryAdapter.renderSkillToolConfig(
+              this.actor,
+              'skills',
+              skill,
+            );
+          }
+        case 'skills':
+          return FoundryAdapter.renderSkillsConfig(this.actor);
+        case 'special-traits':
+          return this._renderChild(
+            new SpecialTraitsApplication({ document: this.actor }),
+          );
+        case 'tool':
+          const tool = target.closest<HTMLElement>('[data-key]')?.dataset.key;
+
+          if (tool) {
+            return FoundryAdapter.renderSkillToolConfig(
+              this.actor,
+              'tool',
+              tool,
+            );
+          }
+        case 'source':
+          return FoundryAdapter.renderSourceConfig(this.actor, 'system.source');
+        case 'spellSlots':
+          return FoundryAdapter.openSpellSlotsConfig(this.actor);
+      }
+    }
+
+    /* -------------------------------------------- */
+
+    /**
+     * Handle opening a configuration application.
+     * @param event         Triggering click event.
+     * @param target  Button that was clicked.
+     * @returns                Return `false` to prevent default behavior.
+     * @abstract
+     */
+    _showConfiguration(event: Event, target: HTMLElement): boolean | void {}
+    
     /* -------------------------------------------- */
     /* SheetTabCacheable
     /* -------------------------------------------- */

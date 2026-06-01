@@ -80,7 +80,7 @@
         onfocus={(ev) => attunementSummaryTooltip?.tryShow(ev)}
       >
         <i
-          class={`fa-sun ${attuned ? 'fas highlighted' : 'far color-text-lighter'}`}
+          class={`fa-sun ${attuned ? 'fas highlighted color-icon-theme-highlight' : 'far color-text-lighter'}`}
         ></i>
         <span class="value font-data-medium"
           >{context.system.attributes.attunement.value}</span
@@ -132,14 +132,11 @@
   {#if context.editable}
     <div class="footer-content-right flexrow flexshrink">
       <a
-        class="button button-icon-only currency-conversion flexshrink"
-        class:disabled={!context.editable}
-        onclick={() =>
-          context.sheet._renderChild(
-            new dnd5e.applications.CurrencyManager({
-              document: context.document,
-            }),
-          )}
+        class={[
+          'button button-icon-only currency-conversion flexshrink',
+          { disabled: !context.editable },
+        ]}
+        data-action="currency"
         data-tooltip="DND5E.CurrencyManager.Title"
       >
         <i class="fas fa-database"></i>
